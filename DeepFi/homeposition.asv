@@ -1,0 +1,7 @@
+function [ posi ] = homeposition( posi )
+posi(1)=1335-145*posi(1);
+posi(2)=1925-145*posi(2);
+
+
+end
+

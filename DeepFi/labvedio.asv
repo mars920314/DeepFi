@@ -1,0 +1,77 @@
+clear all;
+clc;
+    figure(1);
+    home=imread('lab.jpg');
+    image(home);
+    axis([500,8000,0,3500]);
+    axis off;
+    hold on
+    text(5600,100,'black point is original location');
+    text(5600,200,'blue point is estimate location');
+    pause(3);
+    
+errall=zeros(30,1);
+for fi=10:10
+    errpackage=ones(9,9);
+    errallpackage=zeros(9,9);
+    for pack=300:300
+    for k=2:2
+    filename=['.\data\3lat' num2str(k) num2str(fi)];
+    batchdata=getbatchdata(filename,pack,pack+10);
+    dataname=['testbatchdata'];
+    save(dataname, 'batchdata');
+    err=ones(9,9);
+    for i=1:9
+        for j=1:9
+            traindataname=['.\data\mnist_weights' num2str(k) num2str(i) num2str(j) '.mat'];
+            if(exist(traindataname)==2)
+                err(i,j)=errfunc1(dataname,traindataname);
+            end
+        end
+    end
+    errpackage=errpackage.*err;
+    end
+    
+    sumerr=0;
+    for i=1:9
+        for j=1:9
+            if errpackage(i,j)~=1
+                sumerr=sumerr+errpackage(i,j);
+            else
+                errpackage(i,j)=0;
+            end
+        end
+    end
+    errpackage=errpackage/sumerr;
+    errallpackage=errallpackage+errpackage;
+    end
+    errallpackage=errallpackage/1;  %
+    
+    pocal=zeros(2,1);
+    for i=1:9
+        for j=1:9
+            if errallpackage(i,j)~=0
+                [xout yout]=position(i,j,'lab');
+                pocal(1)=pocal(1)+xout*errallpackage(i,j);
+                pocal(2)=pocal(2)+yout*errallpackage(i,j);
+            end
+        end
+    end
+    [poori(1) poori(2)]=position(fi,0,'lat');
+    errall(fi)=sqrt((pocal(1)-poori(1))^2+(pocal(2)-poori(2))^2)*0.3;
+    
+    apoori=labposition(poori);
+    apocal=labposition(pocal);
+    setpoori=scatter(apoori(2),apoori(1),100,'k','filled');
+    hold on
+    setpocal=scatter(apocal(2),apocal(1),100,'b','filled');
+    hold on
+    settext=text(5444,400,['location error is' num2str(errall(fi))]);
+    pause(5);
+%     set(setpoori,'visible','off');
+%     set(setpocal,'visible','off');
+%     set(settext,'visible','off');
+end
+text(150,1400,['average location error is' num2str(mean(errall))]);
+figure(2);
+ecdf(errall);
